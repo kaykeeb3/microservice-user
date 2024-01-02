@@ -2,40 +2,45 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { UpdateUserDto } from '../dtos/update-user.dto';
 import { randomUUID } from 'node:crypto';
-
+import { PrismaService } from 'src/modules/global/prisma/prisma.service';
 @Injectable()
 export class UserRepository {
-  private users: any[] = [];
+  constructor(private readonly prismaService: PrismaService) {}
 
-  create(user: CreateUserDto) {
+  async create(user: CreateUserDto) {
     const formatUser = {
       email: user.email,
       name: user.name,
       id: randomUUID(),
     };
 
-    this.users.push(formatUser);
+    await this.prismaService.users.create({
+      data: formatUser,
+    });
 
     return formatUser;
   }
 
-  findAll() {
-    return this.users;
+  async findAll() {
+    return await this.prismaService.users.findMany();
   }
 
-  updateUserById(id: string, data: UpdateUserDto) {
-    const user = this.users.find((user) => user.id === id);
-
-    for (const key in data) {
-      user[key] = data[key];
-    }
+  async updateUserById(id: string, data: UpdateUserDto) {
+    const user = await this.prismaService.users.update({
+      where: {
+        id,
+      },
+      data,
+    });
 
     return user;
   }
 
-  deleteUserById(id: string) {
-    const index = this.users.findIndex((user) => user.id === id);
-
-    this.users.splice(index, 1);
+  async deleteUserById(id: string) {
+    return await this.prismaService.users.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
